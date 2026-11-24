@@ -1,0 +1,9 @@
+{
+	"repository": "Callout-Studio/obsidian",
+	"folder": "docs/internals-docs",
+	"copy": [],
+	"sites": {
+		"docs/user-guide": "https://callout-studio.github.io/docs",
+		"docs/internals-docs": "https://callout-studio.github.io/internal-docs"
+	}
+}

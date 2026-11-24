@@ -1,0 +1,102 @@
+name: Build and deploy
+
+# Builds the site from the Callout-Studio/obsidian commit in source-commit.txt
+# and publishes it on GitHub Pages. Callout-Studio/obsidian rewrites that file
+# whenever these docs change, and that push is what runs this.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Callout-Studio/obsidian commit to build: empty for the one in source-commit.txt, or master for the newest"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  QUARTZ_VERSION: v5.2.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v7
+        with:
+          path: site
+
+      - name: Choose what to build
+        id: source
+        env:
+          REQUESTED: ${{ inputs.commit }}
+        run: |
+          commit="${REQUESTED:-$(tr -d '[:space:]' < site/source-commit.txt)}"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          {
+            echo "paths<<END_OF_PATHS"
+            jq -r '[.folder] + (.copy // []) | .[]' site/site.json
+            echo "END_OF_PATHS"
+          } >> "$GITHUB_OUTPUT"
+
+      # Only the docs folder is checked out. The full history (without file
+      # contents) is fetched so each page can show when it last changed.
+      - name: Check out the docs
+        uses: actions/checkout@v7
+        with:
+          repository: Callout-Studio/obsidian
+          ref: ${{ steps.source.outputs.commit }}
+          path: source
+          fetch-depth: 0
+          sparse-checkout: ${{ steps.source.outputs.paths }}
+
+      - name: Check out Quartz
+        uses: actions/checkout@v7
+        with:
+          repository: jackyzha0/quartz
+          ref: ${{ env.QUARTZ_VERSION }}
+          path: quartz
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: quartz/package-lock.json
+
+      - name: Install Quartz and its plugins
+        run: |
+          cp site/quartz.config.yaml site/quartz.ts quartz/
+          cd quartz
+          npm ci
+          npm run install-plugins
+
+      - name: Prepare the pages
+        run: node site/prepare-content.mjs site/site.json source quartz/content
+
+      - name: Build
+        working-directory: quartz
+        run: npx quartz build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: quartz/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish on GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
