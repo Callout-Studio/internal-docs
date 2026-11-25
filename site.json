@@ -5,5 +5,22 @@
 	"sites": {
 		"docs/user-guide": "https://callout-studio.github.io/docs",
 		"docs/internals-docs": "https://callout-studio.github.io/internal-docs"
+	},
+	"redirects": {
+		"20-build-test-release": "22-build-test-release",
+		"21-public-api": "23-public-api",
+		"22-extending": "24-extending",
+		"23-common-pitfalls": "25-common-pitfalls",
+		"24-logging-and-diagnostics": "26-logging-and-diagnostics",
+		"25-privacy-and-permissions": "27-privacy-and-permissions",
+		"26-declarative-settings": "20-declarative-settings",
+		"27-brush-mascot": "21-brush-mascot"
+	},
+	"quartz": {
+		"configuration": {
+			"pageTitle": "Callout Studio Internal Docs",
+			"pageTitleSuffix": " | Callout Studio Internal Docs",
+			"baseUrl": "callout-studio.github.io/internal-docs"
+		}
 	}
 }
